@@ -4,85 +4,93 @@ import pylab as plb
 import numpy as np
 import mountaincar
 
+import pickle
+
 from collections import defaultdict
 import random
 
+# Model parameters
+actions = [-1, 0, 1]
+tau = 0.1 # TODO: change during learning
+alpha = 0.01 # TODO: find reasonable value
+gamma = 0.95 # Given
+lambda_ = 0.5 # 0 < lambda < 1
+etha = 0.1 # TODO: Find reasonable value
 
-class Neural_net():
-    def __init__(self, x_dim, psi_dim):
+class InputNeuron():
+    def __init__(self, x, dx, var_x, var_dx):
+        self.center = (x, dx)
+        self.x = x
+        self.dx = dx
+        self.var_x = var_x
+        self.var_dx = var_dx
 
-        # Input layer
-        self.x_dim = x_dim
-        self.psi_dim = psi_dim
-        self.weights = np.array(random.random()) * range(x_dim * psi_dim)
+        # One weight going to each output neuron
+        self.weight = { a: random.random() for a in actions }
+        self.e_trace = { a: 0 for a in actions }
+
+    def response(self, state):
+        x, dx = state
+        return np.exp(-((self.x - dx) ** 2) / self.var_x - (self.dx - dx) ** 2 / self.var_dx)
+
+    def update_e_trace(self, state, action):
+        for a in actions:
+            self.e_trace[a] *= gamma * lambda_
+
+            if a == action:
+                self.e_trace[a] += self.response(state)
+
+    def update_weights(self, td_error):
+        for a in actions:
+            # TODO: should it be plus or minus the d_w?
+            d_weight = etha * td_error * self.e_trace[a]
+            self.weight[a] += d_weight
+
+
+class NeuralNet():
+    def __init__(self, x_dim, dx_dim):
 
         x_centers = np.linspace(-150, 30, x_dim)
-        psi_centers = np.linspace(-15, 15, psi_dim)
+        dx_centers = np.linspace(-15, 15, dx_dim)
 
-        # probably don't need this
-        self.centers = list(zip(x_centers, psi_centers))
+        var_x = 180 / x_dim
+        var_dx = 30 / dx_dim
 
-        # Parameters for the gaussians
-        self.x_var = 9.167
-        self.psi_var = 1.677
+        # Grid of input neurons
+        self.input_neurons = [InputNeuron(x, dx, var_x, var_dx) for x in x_centers for dx in dx_centers]
 
-    def _response(self, j, state):
-        x, psi = state
-        response = np.exp(-((self.x_centers[j] - x)**2) / self.x_var - (self.psi_centers[j] - psi)**2 / self.psi_var)
-        response
-
-    def _responses(self, state):
-        return np.array(self._response(j, state) for j in range(self.x_dim * self.psi_dim))
-
-    def output(self, a, state):
+    def output(self, state, action):
         # a is the output neuron 1, 2, or 3
-        assert(0 <= a <= 2)
-        return sum(np.transpose(self.weights).dot(self._responses(state)))
+        assert(action in actions)
+        return sum(inp.response(state) * inp.weight[action] for inp in self.input_neurons)
 
+    def update_e_traces(self, state, action):
+        for input_neuron in self.input_neurons:
+            input_neuron.update_e_trace(state, action)
 
+    def update_weights(self, td_error):
+        for input_neuron in self.input_neurons:
+            input_neuron.update_weights(td_error)
 
-class Sarsa():
-    def __init__(self):
-        self.Q = defaultdict(int)
-        self.actions = [1, 0, -1]
-        self.tau = 0.1 # TODO: What should this be?
-        self.alpha = 0.01 # TODO: What should this be?
-        self.gamma = 0.95
-
-        self
-
-    def action_value(self, state, action):
-        """ The action-value function Q(state, action)
-        :param state: a tuple (x, x_d), containing the position and speed in the x-plane
-        :param action: 1,0, or -1, corresponding to left, no action, right
-        :return: the action-state value
-        """
-        return self.Q[(state, action)]
-
-    def action_probability(self, state, action):
-        return np.exp(self.action_value(state, action) / self.tau) / (sum([np.exp(self.action_value(state, action_) / self.tau) for action_ in self.actions]))
-
-
-    def update_action_value(self, state, action, reward, next_state, next_action):
-        Q = self.Q[(state, action)]
-        Q_ = self.Q[(next_state, next_action)]
-
-        self.Q[(state, action)] = Q + self.alpha * (reward + self.gamma * Q_ - Q)
+    def _action_probability(self, state, action):
+        return np.exp(self.output(state, action) / tau) / (sum([np.exp(self.output(state, a) / tau) for a in actions]))
 
     def next_action(self, state):
         # Select an action based on the action_probability values
 
-        action_probabilities = [self.action_probability(state, action) for action in self.actions]
+        action_probabilities = [self._action_probability(state, action) for action in actions]
 
-        x = random.uniform(0, 1)
+        x = random.random()
         cumulative_probability = 0.0
-
-        for action, action_probability in zip(self.actions, action_probabilities):
+        for action, action_probability in zip(actions, action_probabilities):
             cumulative_probability += action_probability
             if x < cumulative_probability:
                 break
-
         return action
+
+    def save_to_file(self):
+        pickle.dump(self.input_neurons, "input_neurons.pkl")
+
 
 
 class Agent():
@@ -96,6 +104,14 @@ class Agent():
         else:
             self.mountain_car = mountain_car
 
+        self.nn = NeuralNet(20,20)
+
+    def run_simulation(self, n_episodes=9000):
+        for episode in range(n_episodes):
+            print('Running ', episode, ': ', end='')
+            self.run_episode(n_steps=1000)
+            self.nn.save_to_file()
+
     def run_episode(self, n_steps=200):
         """Do a trial without learning, with display.
 
@@ -103,15 +119,6 @@ class Agent():
         ----------
         n_steps -- number of steps to simulate for
         """
-
-        # Initialize the sarsa algorithm
-        sarsa = Sarsa()
-
-        # prepare for the visualization
-        plb.ion()
-        mv = mountaincar.MountainCarViewer(self.mountain_car)
-        mv.create_figure(n_steps, n_steps)
-        plb.draw()
 
         # Initialize
         # make sure the mountain-car is reset
@@ -121,7 +128,7 @@ class Agent():
         state = self.mountain_car.state()
 
         # choose an action from the policy:
-        action = sarsa.next_action(state)
+        action = self.nn.next_action(state)
         for n in range(n_steps):
             self.mountain_car.apply_force(action)
 
@@ -129,32 +136,25 @@ class Agent():
             self.mountain_car.simulate_timesteps(100, 0.01)
 
             next_state = self.mountain_car.state()
+            next_action = self.nn.next_action(next_state)
             reward = self.mountain_car.R
-            next_action = sarsa.next_action(next_state)
 
-            sarsa.update_action_value(state, action, reward, next_state, next_action)
+            td_error = reward +  gamma * self.nn.output(next_state, next_action) - self.nn.output(state, action)
+            self.nn.update_weights(td_error)
+            self.nn.update_e_traces(state, action)
 
             state, action = next_state, next_action
-
-            # update the visualization
-            if n % 10 == 0:
-                print('\rt =', self.mountain_car.t)
-                sys.stdout.flush()
-                mv.update_figure()
-                plb.show()
-                plb.pause(1e-100)
 
             # check if the episode is finished
             if reward > 0.0:
                 print("\rreward obtained at t = ", self.mountain_car.t)
                 break
+        if reward == 0.0:
+            print("\rreward not obtained")
 
 
 if __name__ == "__main__":
-    nn = Neural_net(20,20)
-
-
-    #d = Agent()
-    #d.run_episode(5000)
-    #plb.show()
-    #input("Press Enter to continue...")
+    d = Agent()
+    d.run_simulation()
+    plb.show()
+    input("Press Enter to continue...")
