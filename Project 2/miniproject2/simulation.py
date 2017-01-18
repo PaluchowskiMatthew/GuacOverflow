@@ -12,7 +12,7 @@ actions = [-1, 0, 1]    # Actions corresponding to "left", "no action", "right"
 tau = 100               # "Temperature" of the action selection, controlling the exploration/exploitation ratio
 alpha = 0.5             # Learning rate (etha in lecture notes) 0 <= alpha <= 1
 gamma = 0.95            # Discount factor: importance of future rewards
-lambda_ = 0.95          # 0 < lambda < 1
+lambda_ = 0.5          # 0 < lambda < 1
 
 np.seterr(over='print')
 
@@ -28,7 +28,6 @@ class InputNeuron:
         # One weight going to each output neuron
         self.weight = {a: uniform() for a in actions}
         self.e_trace = {a: 0 for a in actions}
-
 
     def response(self, state):
         x, dx = state
@@ -73,7 +72,13 @@ class NeuralNet:
             input_neuron.update_weights(td_error)
 
     def _action_probability(self, state, action):
-        return np.exp(self.output(state, action) / tau) / (sum([np.exp(self.output(state, a) / tau) for a in actions]))
+        # Numerically stable Softmax
+        outputs = [self.output(state, a) for a in actions]
+
+        outputs -= max(outputs)
+        output = self.output(state, action) - max(outputs)
+
+        return np.exp(output / tau) / (sum(np.exp(outputs / tau)))
 
     def next_action(self, state):
         # Select an action based on the action_probability values
@@ -136,7 +141,7 @@ class Agent():
             next_action = self.nn.next_action(next_state)
             reward = self.mountain_car.R
 
-            td_error = reward + gamma * self.nn.output(next_state, next_action) - self.nn.output(state, action)
+            td_error = reward - self.nn.output(state, action) + gamma * self.nn.output(next_state, next_action)
             self.nn.update_weights(td_error)
             self.nn.update_e_traces(state, action)
 
@@ -154,7 +159,7 @@ class Agent():
 
 
 if __name__ == "__main__":
-    n_agents = 1
+    n_agents = 10
     n_steps = 10000
     n_episodes = 10000
 
