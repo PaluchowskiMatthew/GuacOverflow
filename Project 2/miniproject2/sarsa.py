@@ -72,10 +72,10 @@ class SARSAAgent():
 
         return rj.flatten() # N*N vector
 
-    def _Q_activity(self, w, state):
+    def _Q_activity(self, state):
         rj = self._rj_activity(state)
 
-        return np.dot(w, rj) # 3 vector
+        return np.dot(self.w, rj) # 3 vector
 
     # def _TD_error(self, current_state, next_state):
     #     R = self.mountain_car.R
@@ -91,6 +91,8 @@ class SARSAAgent():
 
     def _e_udpdate(self, action):
         self.e *= self.gamma * self.lambda_eligibility
+
+        # TODO: pluss only for the selected action
         self.e += self._rj_activity()
 
     def _action_probabilities(self, state):
@@ -102,6 +104,9 @@ class SARSAAgent():
     def _next_action(self, state):
         probabilities = self._action_probabilities(state)
         return np.random.choice(3, p=probabilities)
+
+
+
 
 
     def visualize_trial(self, n_steps = 200):
@@ -118,6 +123,9 @@ class SARSAAgent():
         mv.create_figure(n_steps, n_steps)
         plb.draw()
 
+        # get our SARSA agent
+        agent = SARSAAgent()
+
         # make sure the mountain-car is reset
         self.mountain_car.reset()
 
@@ -125,20 +133,31 @@ class SARSAAgent():
         state = self.mountain_car.state()
 
         # choose an action from the policy:
-        next_action = self.next_action(state)
+        action = self.next_action(state)
 
         for n in range(n_steps):
             print '\rtime =', self.mountain_car.t,
             sys.stdout.flush()
 
             # choose action from the policy
-            self.mountain_car.apply_force(next_action - 1)
+            self.mountain_car.apply_force(action - 1)
             # simulate the timestep
             self.mountain_car.simulate_timesteps(100, 0.01)
 
-            # update the visualization
-            mv.update_figure()
-            plb.draw()
+            next_state = self.mountain_car.state()
+            next_action = agent._next_action(next_state)
+            reward = self.mountain_car.R
+
+            Q_sa = agent._Q_activity(state)[action]
+            Q_next_sa = agent._Q_activity(next_state)[next_action]
+
+            td_error = reward - (Q_sa - self.gamma*Q_next_sa)
+            self.w += self.eta * td_error * self.e
+
+
+            self._e_udpdate(action)
+
+            state, action = next_state, next_action
 
             # check for rewards
             if self.mountain_car.R > 0.0:
