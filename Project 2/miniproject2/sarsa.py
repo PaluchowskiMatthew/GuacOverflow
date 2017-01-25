@@ -30,7 +30,7 @@ class SARSAAgent():
         self.lambda_eligibility = lambda_eligibility
 
         # Exploration parameter
-        # self.tau = tau
+        self.tau = tau
 
         # Grid centers
         x_centers = np.linspace(-150, 30, self.N)
@@ -77,29 +77,22 @@ class SARSAAgent():
 
         return np.dot(self.w, rj) # 3 vector
 
-    # def _TD_error(self, current_state, next_state):
-    #     R = self.mountain_car.R
-    #
-    #     delta = R - ( self._Q_activity(self.w, current_state) - self.gamma * self._Q_activity(self.w, next_state) )
-    #
-    #     return delta_TD
-
     def _w_update(self):
         delta = self._TD_error()
         delta_w = self.eta * np.multiply(delta, self.e)
         self.w += delta_w
 
-    def _e_udpdate(self, action):
+    def _e_udpdate(self, state, action):
         self.e *= self.gamma * self.lambda_eligibility
 
         # TODO: pluss only for the selected action
-        self.e += self._rj_activity()
+        self.e += self._rj_activity(state)
 
     def _action_probabilities(self, state):
         # Softmax
 
         Q_values = self._Q_activity(state)
-        return (np.exp(Q_values / self.tau))/(np.sum(np.exp(Q_values) / self.tau))
+        return (np.exp(Q_values / self.tau))/(np.sum(np.exp(Q_values / self.tau)))
 
     def _next_action(self, state):
         probabilities = self._action_probabilities(state)
@@ -107,9 +100,7 @@ class SARSAAgent():
 
 
 
-
-
-    def visualize_trial(self, n_steps = 200):
+    def visualize_trial(self, agent=None, n_steps = 200):
         """Do a trial without learning, with display.
 
         Parameters
@@ -124,7 +115,10 @@ class SARSAAgent():
         plb.draw()
 
         # get our SARSA agent
-        agent = SARSAAgent()
+        if agent is None:
+            self.agent = SARSAAgent()
+        else:
+            self.agent = agent
 
         # make sure the mountain-car is reset
         self.mountain_car.reset()
@@ -133,11 +127,11 @@ class SARSAAgent():
         state = self.mountain_car.state()
 
         # choose an action from the policy:
-        action = self.next_action(state)
+        action = self._next_action(state)
 
         for n in range(n_steps):
-            print '\rtime =', self.mountain_car.t,
-            sys.stdout.flush()
+            #print('\rtime =', self.mountain_car.t)
+            #sys.stdout.flush()
 
             # choose action from the policy
             self.mountain_car.apply_force(action - 1)
@@ -154,21 +148,40 @@ class SARSAAgent():
             td_error = reward - (Q_sa - self.gamma*Q_next_sa)
             self.w += self.eta * td_error * self.e
 
-
-            self._e_udpdate(action)
+            self._e_udpdate(state, action)
 
             state, action = next_state, next_action
 
             # check for rewards
             if self.mountain_car.R > 0.0:
-                print "\rreward obtained at t = ", self.mountain_car.t
+                print("\rreward obtained at t = ", self.mountain_car.t)
                 break
+        return self.mountain_car.t
 
     def learn(self):
-        # This is your job!
-        pass
+        n_agents = 1
+        n_steps = 10000
+        n_episodes = 1000
+
+        results = []
+        agents = [self]
+
+        print("Starting simulation (%d agents, %d episodes):" % (n_agents, n_episodes))
+        for i in range(n_episodes):
+            print("Episode %d:" % i, end=' ')
+            round = []
+            for agent in agents:
+                res = self.visualize_trial(agent, n_steps)
+                round.append(res)
+
+            results.append(round)
+            print('\n\tAverage completion time:', np.mean(round))
+
+        pickle.dump(results, open("results.pkl", "wb"))
+        print(results)
+        input("Press Enter to continue...")
 
 if __name__ == "__main__":
     s = SARSAAgent()
-    s.visualize_trial()
+    s.learn()
     plb.show()
