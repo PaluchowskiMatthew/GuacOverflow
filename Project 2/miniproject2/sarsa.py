@@ -30,7 +30,7 @@ class SARSAAgent():
         self.lambda_eligibility = lambda_eligibility
 
         # Exploration parameter
-		self.tau = tau
+        # self.tau = tau
 
         # Grid centers
         x_centers = np.linspace(-150, 30, self.N)
@@ -68,7 +68,7 @@ class SARSAAgent():
         current_x, current_dx = state
 
         # r_j for all j
-        rj = np.exp(-((x_grid - current_x) ** 2) / self.var_x - ((self.dx_grid - current_dx) ** 2) / self.var_dx)
+        rj = np.exp(-((self.x_grid - current_x) ** 2) / self.var_x - ((self.dx_grid - current_dx) ** 2) / self.var_dx)
 
         return rj.flatten() # N*N vector
 
@@ -90,13 +90,18 @@ class SARSAAgent():
         self.w += delta_w
 
     def _e_udpdate(self, action):
-        self.e *= gamma * lambda_eligibility
-        self.self.e[:,:,action_idx] += self._rj_activity()
+        self.e *= self.gamma * self.lambda_eligibility
+        self.e += self._rj_activity()
 
+    def _action_probabilities(self, state):
+        # Softmax
 
-    def _next_action(self, action):
+        Q_values = self._Q_activity(state)
+        return (np.exp(Q_values / self.tau))/(np.sum(np.exp(Q_values) / self.tau))
 
-
+    def _next_action(self, state):
+        probabilities = self._action_probabilities(state)
+        return np.random.choice(3, p=probabilities)
 
 
     def visualize_trial(self, n_steps = 200):
