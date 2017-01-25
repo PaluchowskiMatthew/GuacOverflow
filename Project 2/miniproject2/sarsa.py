@@ -54,8 +54,8 @@ class SARSAAgent():
         """
         # initialize the Q-values, weights and the eligibility trace
         self.Q = 0.01 * np.random.rand(self.N,self.N,3) + 0.1
-        self.w = 0.01 * np.random.rand(self.N,self.N,3) + 0.1
-        self.e = np.zeros((self.N,self.N,3))
+        self.w = 0.01 * np.random.rand(3, self.N**2) + 0.1
+        self.e = np.zeros((3, self.N**2))
 
         # list that contains the times it took the agent to reach the target for all trials
         # serves to track the progress of learning
@@ -70,19 +70,19 @@ class SARSAAgent():
         # r_j for all j
         rj = np.exp(-((x_grid - current_x) ** 2) / self.var_x - ((self.dx_grid - current_dx) ** 2) / self.var_dx)
 
-        return rj # N x N matrix
+        return rj.flatten() # N*N vector
 
     def _Q_activity(self, w, state):
         rj = self._rj_activity(state)
 
-        return np.dot(rj, w) # N x N x 3 matrix
+        return np.dot(w, rj) # 3 vector
 
-    def _TD_error(self, current_state, next_state):
-        R = self.mountain_car.R
-
-        delta = R - ( self._Q_activity(w, current_state) - self.gamma * self._Q_activity(w, next_state) )
-
-        return delta_TD 
+    # def _TD_error(self, current_state, next_state):
+    #     R = self.mountain_car.R
+    #
+    #     delta = R - ( self._Q_activity(self.w, current_state) - self.gamma * self._Q_activity(self.w, next_state) )
+    #
+    #     return delta_TD
 
     def _w_update(self):
         delta = self._TD_error()
@@ -127,7 +127,7 @@ class SARSAAgent():
             sys.stdout.flush()
 
             # choose action from the policy
-            self.mountain_car.apply_force(next_action)
+            self.mountain_car.apply_force(next_action - 1)
             # simulate the timestep
             self.mountain_car.simulate_timesteps(100, 0.01)
 
