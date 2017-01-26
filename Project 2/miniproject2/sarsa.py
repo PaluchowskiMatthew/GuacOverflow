@@ -238,7 +238,7 @@ class Simulator():
 
 if __name__ == "__main__":
     n_agents = 1
-    n_steps = 1000
+    n_steps = 10000
     n_episodes = 500
 
     results = []
