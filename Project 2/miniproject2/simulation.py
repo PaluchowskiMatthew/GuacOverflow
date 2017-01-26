@@ -33,7 +33,14 @@ class InputNeuron:
         x, dx = state
         return np.exp(-((self.x - x) ** 2) / self.var_x - ((self.dx - dx) ** 2) / self.var_dx)
 
-    def update_e_trace(self, state, action):
+    def increase_e_trace(self, state, action):
+        for a in actions:
+            self.e_trace[a] *= gamma * lambda_
+
+            if a == action:
+                self.e_trace[a] += self.response(state)
+
+    def decay_e_traces(self, state, action):
         for a in actions:
             self.e_trace[a] *= gamma * lambda_
 
@@ -132,7 +139,8 @@ class Agent():
         # choose an action from the policy:
         action = self.nn.next_action(state)
         for n in range(n_steps):
-            self.mountain_car.apply_force(action)
+            # The actions of mountain_car goes from -1 to 1, while ours goes from 0 to 2
+            self.mountain_car.apply_force(action - 1)
 
             # simulate the timestep
             self.mountain_car.simulate_timesteps(100, 0.01)
@@ -142,8 +150,12 @@ class Agent():
             reward = self.mountain_car.R
 
             td_error = reward - self.nn.output(state, action) + gamma * self.nn.output(next_state, next_action)
+
+            self.nn.increase_e_trace(state, action)
             self.nn.update_weights(td_error)
-            self.nn.update_e_traces(state, action)
+
+            self.nn.decay_e_traces(state, action)
+
 
             state, action, next_state, next_action = next_state, next_action, None, None
 

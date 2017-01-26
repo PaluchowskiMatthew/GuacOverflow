@@ -11,9 +11,11 @@ class SARSAAgent():
     """A not so good agent for the mountain-car task.
     """
 
-    def __init__(self, mountain_car=None, N=20, eta=0.005, gamma=0.99, tau=0.01, lambda_eligibility=0.95):
+    def __init__(self, mountain_car=None, N=20, eta=0.05, gamma=0.99, tau_0=.1, lambda_eligibility=0.95):
         # Gridworld / neural net size
         self.N = N
+
+        self.t = 0
 
         # reward administered t the target location and when
         # bumping into walls
@@ -33,7 +35,7 @@ class SARSAAgent():
         self.lambda_eligibility = lambda_eligibility
 
         # Exploration parameter
-        self.tau = tau
+        self.tau_0 = tau_0
 
         # Grid centers
         x_centers = np.linspace(-150, 30, self.N)
@@ -53,6 +55,10 @@ class SARSAAgent():
 
         # initialize the Q-values etc.
         self._init_values()
+
+    def _tau(self):
+        tau = 0.0005 + self.tau_0 * np.exp(- .0001 * self.t)
+        return tau
 
     def _init_values(self):
         """
@@ -90,9 +96,10 @@ class SARSAAgent():
 
     def _action_probabilities(self, state):
         # Softmax
-
-        Q_values = self._Q_activity(state)
-        return (np.exp(Q_values / self.tau))/(np.sum(np.exp(Q_values / self.tau)))
+        x = self._Q_activity(state) / self._tau()
+        e_x = np.exp(x - np.max(x))
+        probabilities = e_x / e_x.sum()
+        return probabilities
 
     def _next_action(self, state):
         probabilities = self._action_probabilities(state)
@@ -199,6 +206,7 @@ class Simulator():
 
             # simulate the timestep
             self.mountain_car.simulate_timesteps(100, 0.01)
+            self.SARSA.t += 1 #self.mountain_car.t
 
             next_state = self.mountain_car.state()
             next_action = self.SARSA._next_action(next_state)
@@ -226,19 +234,22 @@ class Simulator():
         return self.mountain_car.t
 
 if __name__ == "__main__":
-
+    '''
     agent = SARSAAgent()
+    print(agent.var_x, agent.var_dx)
 
 
-    #state = (-60,0)
-    #activity = agent._rj_activity(state).reshape((20, 20))
-    #plt.matshow(activity)
-    #plt.show()
-    #input("...")
+    state = (0,0)
+    activity = agent._rj_activity(state).reshape((20, 20))
+
+    #print(activity)
+    plt.matshow(activity)
+    plt.show()
+    '''
 
 
 
-    n_agents = 5
+    n_agents = 10
     n_steps = 5000
     n_episodes = 200
 
