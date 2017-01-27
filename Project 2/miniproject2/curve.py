@@ -31,7 +31,39 @@ def lambda_plots():
 
     fig_lamb.savefig("lambda_variations.png")
 
+def vector_field_plots():
+    results = pickle._load(open("vector_fields.pkl", "rb"))
+
+    fig, axs = plt.subplots(3, sharex=True, sharey=True)
+
+    fig.set_size_inches(10, 20, forward=True)
+    fig.suptitle("Exploring the vector fields", fontsize=20)
+
+    x = np.linspace(-150,30,20)
+    dx  = np.linspace(-15,15,20)
+    u,v = np.meshgrid(x,dx)
+
+    for i, key in enumerate(results):
+        dummy = np.zeros((results[key][0].shape[0],results[key][0].shape[1]))
+        axs[0].quiver(u, v, results[key][0], dummy)
+        axs[0].set_title("Trial no 1")
+
+        axs[1].quiver(u, v, results[key][20], dummy)
+        axs[1].set_title("Trial no 20")
+
+        axs[2].quiver(u, v, results[key][99], dummy)
+        axs[2].set_title("Trial no 100")
+
+    plt.show()
+    plt.savefig("lambda_variations.png")
+
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     tau_plots()
     lambda_plots()
+=======
+    # tau_plots()
+    # lambda_plots()
+    vector_field_plots()
+>>>>>>> c477f466a45153daae5aaf0387370310088f5ec5

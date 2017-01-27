@@ -103,7 +103,19 @@ class SARSAAgent():
         probabilities = self._action_probabilities(state)
         return np.random.choice(3, p=probabilities)
 
+    def _vector_field(self):
+        x_centers = np.linspace(-150, 30, self.N)
+        dx_centers = np.linspace(-15, 15, self.N)
+        x_grid, dx_grid = np.meshgrid(x_centers, dx_centers)
+        direction = np.zeros((20, 20))
 
+        for pos_indx,pos in enumerate(x_grid):
+            for vel_indx,vel  in enumerate(dx_grid):
+                state = (pos, vel)
+                Q = self._output_activity(state)
+                direction[pos_indx,vel_indx] = np.argmax(Q) - 1
+
+        return direction
 
     def visualize_trial(self, agent=None, n_steps = 200):
         """Do a trial without learning, with display.
@@ -153,6 +165,7 @@ class SARSAAgent():
     def learn(self, n_episodes, max_steps):
 
         step_history = []
+        vector_field_history = []
         for episode in range(n_episodes):
             self.mountain_car.reset()
             self._reset_e_values()
@@ -188,8 +201,9 @@ class SARSAAgent():
                     break
 
             step_history.append(self.mountain_car.t)
+            vector_field_history.append(self._vector_field())
             print("Episode %d: %d" % (episode, self.mountain_car.t))
-        return step_history
+        return step_history, vector_field_history
 
 
 def explore_tau(n_agents, max_steps, n_episodes):
@@ -225,7 +239,18 @@ def explore_lambda(n_agents, max_steps, n_episodes):
 
     pickle.dump(results, open("lambda_variations.pkl", "wb"))
 
+def explore_vector_field(n_agents, max_steps, n_episodes):
+    agents = {
+        ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95))
+    }
 
+    results = {}
+    for name, agent in agents:
+        result, vec = agent.learn(n_episodes, max_steps)
+        results[name] = vec
+        # print(name, results)
+
+    pickle.dump(results, open("vector_fields.pkl", "wb"))
 
 if __name__ == "__main__":
     n_agents = 10
@@ -233,12 +258,12 @@ if __name__ == "__main__":
     n_episodes = 100
 
     #explore_tau(n_agents, max_steps, n_episodes)
-    explore_lambda(n_agents, max_steps, n_episodes)
+    #explore_lambda(n_agents, max_steps, n_episodes)
+    explore_vector_field(n_agents, max_steps, n_episodes)
 
 
 
-
-    # results = []
+    # time_results = []
     # agents = [SARSAAgent() for _ in range(n_agents)]
     #
     # print("Starting simulation (%d agents, %d episodes):" % (n_agents, n_episodes))
