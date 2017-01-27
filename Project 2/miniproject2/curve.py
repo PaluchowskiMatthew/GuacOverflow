@@ -32,7 +32,7 @@ def lambda_plots():
     fig_lamb.savefig("lambda_variations.png")
 
 def vector_field_plots():
-    results = pickle._load(open("vector_fields.pkl", "rb"))
+    results = pickle._load(open("vector_fields2.pkl", "rb"))
 
     fig, axs = plt.subplots(3, sharex=True, sharey=True)
 

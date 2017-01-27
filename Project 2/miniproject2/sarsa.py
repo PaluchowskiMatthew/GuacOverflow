@@ -11,7 +11,7 @@ class SARSAAgent():
     """A pretty good agent for the mountain-car task.
     """
 
-    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True, initial_weights=0):
+    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True):
         # GridWorld / neural net size
         self.N = size
 
@@ -54,13 +54,8 @@ class SARSAAgent():
         else:
             self.mountain_car = mountain_car
 
-        # initialize the weights
-        if initial_weights == 1:
-            self.w = np.ones((3, self.N ** 2))
-        else:
-            self.w = np.zeros((3, self.N ** 2))
-
-        # initialize the eligibility traces
+        # initialize the weights and eligibility traces
+        self.w = np.zeros((3, self.N ** 2))
         self._reset_e_values()
 
     def _tau(self):
@@ -77,10 +72,10 @@ class SARSAAgent():
     def _input_activity(self, state):
         current_x, current_dx = state
 
-        x_dist = np.abs(self.x_grid - current_x).flatten()
-        dx_dist = np.abs(self.dx_grid - current_dx).flatten()
+        x_dist = (self.x_grid - current_x)
+        dx_dist = (self.dx_grid - current_dx)
 
-        rj = np.exp(-(x_dist ** 2)/self.var_x - (dx_dist ** 2) / self.var_dx)
+        rj = (np.exp(-(x_dist ** 2)/self.var_x - (dx_dist ** 2) / self.var_dx)).flatten()
         return rj # N*N vector
 
     def _output_activity(self, state):
@@ -107,13 +102,13 @@ class SARSAAgent():
         x_centers = np.linspace(-150, 30, self.N)
         dx_centers = np.linspace(-15, 15, self.N)
         x_grid, dx_grid = np.meshgrid(x_centers, dx_centers)
-        direction = np.zeros((20, 20))
+        direction = np.zeros((self.N, self.N))
 
-        for pos_indx,pos in enumerate(x_grid):
-            for vel_indx,vel  in enumerate(dx_grid):
+        for pos_indx, pos in enumerate(x_grid):
+            for vel_indx, vel  in enumerate(dx_grid):
                 state = (pos, vel)
-                Q = self._output_activity(state)
-                direction[pos_indx,vel_indx] = np.argmax(Q) - 1
+                actions = self._action_probabilities(state)
+                direction[pos_indx, vel_indx] = np.argmax(actions)-1
 
         return direction
 
@@ -202,21 +197,22 @@ class SARSAAgent():
 
             step_history.append(self.mountain_car.t)
             vector_field_history.append(self._vector_field())
+
             print("Episode %d: %d" % (episode, self.mountain_car.t))
         return step_history, vector_field_history
 
 
 def explore_tau(n_agents, max_steps, n_episodes):
-    configs = [
-        ('tau=0, no decay', [SARSAAgent(tau=0, tau_decay=False) for _ in range(n_agents)]),
-        ('tau=1, no decay', [SARSAAgent(tau=1, tau_decay=False) for _ in range(n_agents)]),
-        ('tau=inf, no decay', [SARSAAgent(tau=np.inf, tau_decay=False) for _ in range(n_agents)]),
-        ('tau=1, decay', [SARSAAgent(tau=1, tau_decay=True) for _ in range(n_agents)])
-    ]
+    agents = {
+        ('tau=0, no decay', SARSAAgent(tau=0, tau_decay=False)),
+        ('tau=1, no decay', SARSAAgent(tau=1, tau_decay=False)),
+        ('tau=inf, no decay', SARSAAgent(tau=np.inf, tau_decay=False)),
+        ('tau=1, decay', SARSAAgent(tau=1, tau_decay=True))
+    }
 
     results = {}
-    for name, agents in configs:
-        result = [agent.learn(n_episodes, max_steps) for agent in agents]
+    for name, agent in agents:
+        result, vec = agent.learn(n_episodes, max_steps)
         results[name] = result
         print(name, results)
 
@@ -224,18 +220,17 @@ def explore_tau(n_agents, max_steps, n_episodes):
 
 
 def explore_lambda(n_agents, max_steps, n_episodes):
-    configs = [
-        ('lambda = 0.95', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95) for _ in range(n_agents)]),
-        ('lambda = 0.5', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.5) for _ in range(n_agents)]),
-        ('lambda = 0.0', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0) for _ in range(n_agents)])
-    ]
+    agents = {
+        ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95)),
+        ('lambda = 0.5', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.5)),
+        ('lambda = 0.0', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0))
+    }
 
     results = {}
-    for name, agents in configs:
-        print(name)
-        result = [agent.learn(n_episodes, max_steps) for agent in agents]
+    for name, agent in agents:
+        result, vec = agent.learn(n_episodes, max_steps)
         results[name] = result
-        print(results)
+        print(name, results)
 
     pickle.dump(results, open("lambda_variations.pkl", "wb"))
 
@@ -250,10 +245,10 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
         results[name] = vec
         # print(name, results)
 
-    pickle.dump(results, open("vector_fields.pkl", "wb"))
+    pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
 if __name__ == "__main__":
-    n_agents = 10
+    n_agents = 1
     max_steps = 5000
     n_episodes = 100
 
