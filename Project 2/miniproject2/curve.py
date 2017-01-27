@@ -54,16 +54,9 @@ def vector_field_plots():
         axs[2].quiver(u, v, results[key][99], dummy)
         axs[2].set_title("Trial no 100")
 
-    plt.show()
-    plt.savefig("lambda_variations.png")
-
+    fig.savefig("vector_fields.png")
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    tau_plots()
-    lambda_plots()
-=======
     # tau_plots()
     # lambda_plots()
     vector_field_plots()
->>>>>>> c477f466a45153daae5aaf0387370310088f5ec5

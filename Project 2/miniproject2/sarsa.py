@@ -101,11 +101,10 @@ class SARSAAgent():
     def _vector_field(self):
         x_centers = np.linspace(-150, 30, self.N)
         dx_centers = np.linspace(-15, 15, self.N)
-        x_grid, dx_grid = np.meshgrid(x_centers, dx_centers)
         direction = np.zeros((self.N, self.N))
 
-        for pos_indx, pos in enumerate(x_grid):
-            for vel_indx, vel  in enumerate(dx_grid):
+        for pos_indx, pos in enumerate(x_centers):
+            for vel_indx, vel  in enumerate(dx_centers):
                 state = (pos, vel)
                 actions = self._action_probabilities(state)
                 direction[pos_indx, vel_indx] = np.argmax(actions)-1
