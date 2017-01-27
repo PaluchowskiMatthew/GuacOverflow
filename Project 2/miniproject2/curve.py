@@ -26,7 +26,7 @@ def lambda_plots():
     fig_lamb.suptitle("Exploring the lambda-parameter", fontsize=20)
 
     for i, key in enumerate(sorted(results)):
-        axs_lamb[i].plot(results[key])
+        axs_lamb[i].plot(np.mean(results[key], axis=0))
         axs_lamb[i].set_title(key)
 
     fig_lamb.savefig("lambda_variations.png")
@@ -59,11 +59,8 @@ def vector_field_plots():
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    tau_plots()
+    #tau_plots()
     lambda_plots()
-=======
     # tau_plots()
     # lambda_plots()
-    vector_field_plots()
->>>>>>> c477f466a45153daae5aaf0387370310088f5ec5
+    #vector_field_plots()

@@ -257,9 +257,9 @@ if __name__ == "__main__":
     max_steps = 5000
     n_episodes = 100
 
-    #explore_tau(n_agents, max_steps, n_episodes)
+    explore_tau(n_agents, max_steps, n_episodes)
     #explore_lambda(n_agents, max_steps, n_episodes)
-    explore_vector_field(n_agents, max_steps, n_episodes)
+    #explore_vector_field(n_agents, max_steps, n_episodes)
 
 
 
