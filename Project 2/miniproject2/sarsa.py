@@ -11,7 +11,7 @@ class SARSAAgent():
     """A pretty good agent for the mountain-car task.
     """
 
-    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=.1, eligibity_trace_decay=0.95, tau_decay=True):
+    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True):
         # GridWorld / neural net size
         self.N = size
 
@@ -187,12 +187,7 @@ class SARSAAgent():
         return step_history
 
 
-if __name__ == "__main__":
-    n_agents = 5
-    max_steps = 5000
-    n_episodes = 100
-
-    # Explore tau-values:
+def explore_tau(n_agents, max_steps, n_episodes):
     agents = {
         ('tau=0, no decay', SARSAAgent(tau=0, tau_decay=False)),
         ('tau=1, no decay', SARSAAgent(tau=1, tau_decay=False)),
@@ -208,11 +203,12 @@ if __name__ == "__main__":
 
     pickle.dump(results, open("tau_variations.pkl", "wb"))
 
-    # Explore eligibility_trace_decay-values:
+
+def explore_lambda(n_agents, max_steps, n_episodes):
     agents = {
         ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95)),
         ('lambda = 0.5', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.5)),
-        ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0))
+        ('lambda = 0.0', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0))
     }
 
     results = {}
@@ -221,7 +217,17 @@ if __name__ == "__main__":
         results[name] = result
         print(name, results)
 
-    pickle.dump(results, open("tau_variations.pkl", "wb"))
+    pickle.dump(results, open("lambda_variations.pkl", "wb"))
+
+
+
+if __name__ == "__main__":
+    n_agents = 5
+    max_steps = 5000
+    n_episodes = 100
+
+    #explore_tau(n_agents, max_steps, n_episodes)
+    explore_lambda(n_agents, max_steps, n_episodes)
 
 
 
