@@ -72,10 +72,10 @@ class SARSAAgent():
     def _input_activity(self, state):
         current_x, current_dx = state
 
-        x_dist = np.abs(self.x_grid - current_x).flatten()
-        dx_dist = np.abs(self.dx_grid - current_dx).flatten()
+        x_dist = (self.x_grid - current_x)
+        dx_dist = (self.dx_grid - current_dx)
 
-        rj = np.exp(-(x_dist ** 2)/self.var_x - (dx_dist ** 2) / self.var_dx)
+        rj = (np.exp(-(x_dist ** 2)/self.var_x - (dx_dist ** 2) / self.var_dx)).flatten()
         return rj # N*N vector
 
     def _output_activity(self, state):
@@ -102,13 +102,15 @@ class SARSAAgent():
         x_centers = np.linspace(-150, 30, self.N)
         dx_centers = np.linspace(-15, 15, self.N)
         x_grid, dx_grid = np.meshgrid(x_centers, dx_centers)
-        direction = np.zeros((20, 20))
+        direction = np.zeros((self.N, self.N))
 
-        for pos_indx,pos in enumerate(x_grid):
-            for vel_indx,vel  in enumerate(dx_grid):
+        for pos_indx, pos in enumerate(x_grid):
+            for vel_indx, vel  in enumerate(dx_grid):
                 state = (pos, vel)
-                Q = self._output_activity(state)
-                direction[pos_indx,vel_indx] = np.argmax(Q) - 1
+                actions = self._action_probabilities(state)
+                #print(Q)
+                #print("\n")
+                direction[pos_indx, vel_indx] = np.argmax(actions)-1
 
         return direction
 
@@ -197,6 +199,7 @@ class SARSAAgent():
 
             step_history.append(self.mountain_car.t)
             vector_field_history.append(self._vector_field())
+
             print("Episode %d: %d" % (episode, self.mountain_car.t))
         return step_history, vector_field_history
 
@@ -244,7 +247,7 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
         results[name] = vec
         # print(name, results)
 
-    pickle.dump(results, open("vector_fields.pkl", "wb"))
+    pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
 if __name__ == "__main__":
     n_agents = 1
