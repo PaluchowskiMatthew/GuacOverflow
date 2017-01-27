@@ -11,7 +11,7 @@ class SARSAAgent():
     """A pretty good agent for the mountain-car task.
     """
 
-    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True):
+    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True, initial_weights=0):
         # GridWorld / neural net size
         self.N = size
 
@@ -54,8 +54,13 @@ class SARSAAgent():
         else:
             self.mountain_car = mountain_car
 
-        # initialize the weights and eligibility traces
-        self.w = np.zeros((3, self.N ** 2))
+        # initialize the weights
+        if initial_weights == 1:
+            self.w = np.ones((3, self.N ** 2))
+        else:
+            self.w = np.zeros((3, self.N ** 2))
+
+        # initialize the eligibility traces
         self._reset_e_values()
 
     def _tau(self):
@@ -205,16 +210,16 @@ class SARSAAgent():
 
 
 def explore_tau(n_agents, max_steps, n_episodes):
-    agents = {
-        ('tau=0, no decay', SARSAAgent(tau=0, tau_decay=False)),
-        ('tau=1, no decay', SARSAAgent(tau=1, tau_decay=False)),
-        ('tau=inf, no decay', SARSAAgent(tau=np.inf, tau_decay=False)),
-        ('tau=1, decay', SARSAAgent(tau=1, tau_decay=True))
-    }
+    configs = [
+        ('tau=0, no decay', [SARSAAgent(tau=0, tau_decay=False) for _ in range(n_agents)]),
+        ('tau=1, no decay', [SARSAAgent(tau=1, tau_decay=False) for _ in range(n_agents)]),
+        ('tau=inf, no decay', [SARSAAgent(tau=np.inf, tau_decay=False) for _ in range(n_agents)]),
+        ('tau=1, decay', [SARSAAgent(tau=1, tau_decay=True) for _ in range(n_agents)])
+    ]
 
     results = {}
-    for name, agent in agents:
-        result, vec = agent.learn(n_episodes, max_steps)
+    for name, agents in configs:
+        result = [agent.learn(n_episodes, max_steps) for agent in agents]
         results[name] = result
         print(name, results)
 
@@ -222,17 +227,18 @@ def explore_tau(n_agents, max_steps, n_episodes):
 
 
 def explore_lambda(n_agents, max_steps, n_episodes):
-    agents = {
-        ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95)),
-        ('lambda = 0.5', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.5)),
-        ('lambda = 0.0', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0))
-    }
+    configs = [
+        ('lambda = 0.95', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95) for _ in range(n_agents)]),
+        ('lambda = 0.5', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.5) for _ in range(n_agents)]),
+        ('lambda = 0.0', [SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.0) for _ in range(n_agents)])
+    ]
 
     results = {}
-    for name, agent in agents:
-        result, vec = agent.learn(n_episodes, max_steps)
+    for name, agents in configs:
+        print(name)
+        result = [agent.learn(n_episodes, max_steps) for agent in agents]
         results[name] = result
-        print(name, results)
+        print(results)
 
     pickle.dump(results, open("lambda_variations.pkl", "wb"))
 
@@ -250,7 +256,7 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
     pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
 if __name__ == "__main__":
-    n_agents = 1
+    n_agents = 10
     max_steps = 5000
     n_episodes = 100
 
