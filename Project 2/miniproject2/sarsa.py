@@ -11,7 +11,7 @@ class SARSAAgent():
     """A pretty good agent for the mountain-car task.
     """
 
-    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True):
+    def __init__(self, mountain_car=None, size=20, eta=0.05, gamma=0.99, tau=1, eligibity_trace_decay=0.95, tau_decay=True, non_zero_weights=False):
         # GridWorld / neural net size
         self.N = size
 
@@ -55,7 +55,11 @@ class SARSAAgent():
             self.mountain_car = mountain_car
 
         # initialize the weights and eligibility traces
-        self.w = np.zeros((3, self.N ** 2))
+        if non_zero_weights:
+            self.w = np.ones((3, self.N ** 2))
+        else:
+            self.w = np.zeros((3, self.N ** 2))
+
         self._reset_e_values()
 
     def _tau(self):
@@ -233,6 +237,22 @@ def explore_lambda(n_agents, max_steps, n_episodes):
 
     pickle.dump(results, open("lambda_variations.pkl", "wb"))
 
+def explore_weights(n_agents, max_steps, n_episodes):
+    agents = {
+        ('Initial weights = 0', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95)),
+        ('Initial weights = 1', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95, non_zero_weights=True)),
+        ('Initial weights = 1, tau = 0', SARSAAgent(tau=1, tau_decay=False, eligibity_trace_decay=0.95, non_zero_weights=True))
+    }
+
+    results = {}
+    for name, agent in agents:
+        result, vec = agent.learn(n_episodes, max_steps)
+        results[name] = result
+        print(name, results)
+        print(name, agent.w)
+
+    pickle.dump(results, open("weights_variations.pkl", "wb"))
+
 def explore_vector_field(n_agents, max_steps, n_episodes):
     agents = {
         ('lambda = 0.95', SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95))
@@ -247,13 +267,14 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
     pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
 if __name__ == "__main__":
-    n_agents = 1
+    n_agents = 10
     max_steps = 5000
     n_episodes = 100
 
-    explore_tau(n_agents, max_steps, n_episodes)
+    #explore_tau(n_agents, max_steps, n_episodes)
     #explore_lambda(n_agents, max_steps, n_episodes)
     #explore_vector_field(n_agents, max_steps, n_episodes)
+    explore_weights(n_agents, max_steps, n_episodes)
 
 
 

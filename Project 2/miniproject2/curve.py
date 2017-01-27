@@ -14,7 +14,9 @@ def tau_plots():
     for i,key in enumerate(sorted(results)):
         axs_tau[i].plot(results[key])
         axs_tau[i].set_title(key)
+        axs_tau[i].set_ylabel("Steps")
 
+    axs_tau[-1].set_xlabel("Episodes")
     fig_tau.savefig("tau_variations.png")
 
 def lambda_plots():
@@ -28,8 +30,26 @@ def lambda_plots():
     for i, key in enumerate(sorted(results)):
         axs_lamb[i].plot(np.mean(results[key], axis=0))
         axs_lamb[i].set_title(key)
+        axs_lamb[i].set_ylabel("Steps")
 
+    axs_lamb[-1].set_xlabel("Episodes")
     fig_lamb.savefig("lambda_variations.png")
+
+def weights_plots():
+    results = pickle._load(open("weights_variations.pkl", "rb"))
+
+    fig_w, axs_w = plt.subplots(2, sharex=True, sharey=True)
+
+    fig_w.set_size_inches(10, 20, forward=True)
+    fig_w.suptitle("Exploring the weights initialization", fontsize=20)
+
+    for i, key in enumerate(results):
+        axs_w[i].plot(results[key])
+        axs_w[i].set_title(key)
+        axs_w[i].set_ylabel("Steps")
+
+    axs_w[-1].set_xlabel("Episodes")
+    fig_w.savefig("weights_variations.png")
 
 def vector_field_plots():
     results = pickle._load(open("vector_fields2.pkl", "rb"))
@@ -61,3 +81,4 @@ if __name__ == "__main__":
     # tau_plots()
     # lambda_plots()
     # vector_field_plots()
+    weights_plots()
