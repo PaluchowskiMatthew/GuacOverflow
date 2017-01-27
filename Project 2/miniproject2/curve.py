@@ -38,7 +38,7 @@ def lambda_plots():
 def weights_plots():
     results = pickle._load(open("weights_variations.pkl", "rb"))
 
-    fig_w, axs_w = plt.subplots(2, sharex=True, sharey=True)
+    fig_w, axs_w = plt.subplots(3, sharex=True, sharey=True)
 
     fig_w.set_size_inches(10, 20, forward=True)
     fig_w.suptitle("Exploring the weights initialization", fontsize=20)

@@ -146,11 +146,16 @@ class SARSAAgent():
             # Simulate the time step
             self.mountain_car.simulate_timesteps(100, 0.01)
 
+            # update the visualization
+            mv.update_figure()
+            plb.draw()
+
             # Observe the reward
             reward = self.mountain_car.R
 
             # check for rewards
             if reward > 0.0:
+                plb.savefig('Car_viz.png')
                 print("\rreward obtained at t = ", self.mountain_car.t)
                 break
 
@@ -266,6 +271,11 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
 
     pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
+def visualize_best_agent(max_steps, n_episodes):
+    agent = SARSAAgent(tau=1, tau_decay=True, eligibity_trace_decay=0.95)
+    result, vec = agent.learn(n_episodes, max_steps)
+    agent.visualize_trial(agent=agent)
+
 if __name__ == "__main__":
     n_agents = 10
     max_steps = 5000
@@ -274,8 +284,8 @@ if __name__ == "__main__":
     #explore_tau(n_agents, max_steps, n_episodes)
     #explore_lambda(n_agents, max_steps, n_episodes)
     #explore_vector_field(n_agents, max_steps, n_episodes)
-    explore_weights(n_agents, max_steps, n_episodes)
-
+    #explore_weights(n_agents, max_steps, n_episodes)
+    visualize_best_agent(max_steps, n_episodes)
 
 
     # time_results = []
