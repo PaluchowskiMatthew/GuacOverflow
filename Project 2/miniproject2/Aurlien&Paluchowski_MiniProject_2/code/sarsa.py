@@ -267,6 +267,7 @@ def explore_vector_field(n_agents, max_steps, n_episodes):
     for name, agent in agents:
         result, vec = agent.learn(n_episodes, max_steps)
         results[name] = vec
+        # print(name, results)
 
     pickle.dump(results, open("vector_fields2.pkl", "wb"))
 
@@ -280,9 +281,27 @@ if __name__ == "__main__":
     max_steps = 5000
     n_episodes = 100
 
-
     #explore_tau(n_agents, max_steps, n_episodes)
     #explore_lambda(n_agents, max_steps, n_episodes)
     #explore_vector_field(n_agents, max_steps, n_episodes)
     #explore_weights(n_agents, max_steps, n_episodes)
     visualize_best_agent(max_steps, n_episodes)
+
+
+    # time_results = []
+    # agents = [SARSAAgent() for _ in range(n_agents)]
+    #
+    # print("Starting simulation (%d agents, %d episodes):" % (n_agents, n_episodes))
+    # for i in range(n_episodes):
+    #     print("Episode %d:" % i, end=' ')
+    #     round = []
+    #     for a in agents:
+    #         res = a.run_episode(max_steps)
+    #         round.append(res)
+    #
+    #     results.append(round)
+    #     print('\n\tAverage completion time:', np.mean(round))
+    #
+    # pickle.dump(results, open("results.pkl", "wb"))
+    # print(results)
+    # input("Press Enter to continue...")

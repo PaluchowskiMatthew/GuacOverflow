@@ -77,8 +77,8 @@ def vector_field_plots():
     fig.savefig("vector_fields.png")
 
 if __name__ == "__main__":
-    lambda_plots()
-    tau_plots()
-    lambda_plots()
-    vector_field_plots()
+    # lambda_plots()
+    # tau_plots()
+    # lambda_plots()
+    # vector_field_plots()
     weights_plots()
