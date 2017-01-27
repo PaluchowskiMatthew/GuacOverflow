@@ -286,22 +286,3 @@ if __name__ == "__main__":
     #explore_vector_field(n_agents, max_steps, n_episodes)
     #explore_weights(n_agents, max_steps, n_episodes)
     visualize_best_agent(max_steps, n_episodes)
-
-
-    # time_results = []
-    # agents = [SARSAAgent() for _ in range(n_agents)]
-    #
-    # print("Starting simulation (%d agents, %d episodes):" % (n_agents, n_episodes))
-    # for i in range(n_episodes):
-    #     print("Episode %d:" % i, end=' ')
-    #     round = []
-    #     for a in agents:
-    #         res = a.run_episode(max_steps)
-    #         round.append(res)
-    #
-    #     results.append(round)
-    #     print('\n\tAverage completion time:', np.mean(round))
-    #
-    # pickle.dump(results, open("results.pkl", "wb"))
-    # print(results)
-    # input("Press Enter to continue...")
